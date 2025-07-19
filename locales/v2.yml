@@ -1,0 +1,23 @@
+_version: 2
+
+app:
+  title:
+    en: Celestial.rs
+
+page:
+  index:
+    title:
+      en: Main
+      zh-CN: 主页
+  launch:
+    title:
+      en: Launch
+      zh-CN: 启动
+  settings:
+    title:
+      en: Settings
+      zh-CN: 设置
+  about:
+    title:
+      en: About
+      zh-CN: 关于
