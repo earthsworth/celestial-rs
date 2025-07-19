@@ -48,7 +48,7 @@ pub struct ModrinthProfile {
     pub version_id: Option<String>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct LunarVersionManifist {
     pub main_class: String,
     pub artifacts: Vec<Artifact>,
@@ -59,26 +59,26 @@ pub struct LunarVersionManifist {
     pub jre_manifist: InstanceRuntimeManifist,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BrowserUiManifist {
     pub source_url: String,
     pub source_hash: Hash,
     pub assets: BrowserUiAssets,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BrowserUiAssets {
     pub base_url: String,
     pub index_url: String,
     pub index_hash: Hash,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct InstanceRuntimeManifist {
     pub extra_vm_options: Vec<String>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Artifact {
     pub name: String,
     pub hash: Hash,
@@ -88,7 +88,7 @@ pub struct Artifact {
     pub modify_time: Option<f64>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ModPackManifist {
     pub version: String,
     pub hash: Hash,
@@ -96,7 +96,7 @@ pub struct ModPackManifist {
     pub publish_timestamp: i64,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ArtifactType {
     Unknown, // not supported by Celestial
 
@@ -107,7 +107,7 @@ pub enum ArtifactType {
     Javaagent, // Celestial special
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TexturesManifist {
     pub index_url: String,
     pub index_hash: Hash,
@@ -116,18 +116,18 @@ pub struct TexturesManifist {
     pub base_url: String,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LunarVersionsMetadata {
     pub versions: Vec<LunarVersionMetadata>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LunarVersionMetadata {
     pub version: String, // id in the origin json
     pub available_modules: Vec<LunarModuleMetadata>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LunarModuleMetadata {
     pub id: String, // id field in the origin json
     pub name: String,

@@ -46,7 +46,7 @@ pub async fn compare_hash(file_path: &Path, expected_hash: &Hash) -> Result<()> 
         Hash::Md5(_) => {
             use md5::compute;
             let result = compute(file_content);
-            format!("{:x}", result)
+            format!("{result:x}")
         }
         Hash::Sha1(_) => {
             use sha1::{Digest, Sha1};
@@ -96,7 +96,7 @@ pub async fn calculate_file_hash(file_path: &Path, hash_type: &str) -> Result<Ha
         "MD5" => {
             use md5::compute;
             let result = compute(file_content);
-            Hash::Md5(format!("{:x}", result))
+            Hash::Md5(format!("{result:x}"))
         }
         "SHA1" => {
             use sha1::{Digest, Sha1};

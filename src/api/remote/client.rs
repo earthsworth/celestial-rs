@@ -4,6 +4,7 @@ use std::str::FromStr;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use launcher_api::LauncherApi;
+use reqwest::Client;
 use uuid::Uuid;
 
 use crate::{
@@ -47,9 +48,19 @@ pub mod twitter_api;
 pub mod webstore_api;
 pub mod wrapped_api;
 
+#[derive(Clone)]
 pub struct RemoteApiClient {
-    base_url: String,
     raw_client: RawApiClient,
+}
+
+impl RemoteApiClient {
+    pub fn new(client: Client, base_url: &str) -> Self {
+        let raw_client = RawApiClient {
+            client,
+            base_url: base_url.to_string(),
+        };
+        Self { raw_client }
+    }
 }
 
 impl ApiClient for RemoteApiClient {}
@@ -98,7 +109,7 @@ impl LaunchExt for RemoteApiClient {
             launch_type: Some(String::from("OFFLINE")),
             branch: request.branch,
             version: request.version,
-            args: None,
+            args: Some(Vec::new()),
             module: Some(request.module),
             profile,
         };
@@ -158,15 +169,21 @@ impl LaunchExt for RemoteApiClient {
             },
         });
 
-        let base_modpack = response.base_modpack.map(|modpack| Ok(ModPackManifist {
-            version: modpack.version,
-            hash: Hash::Sha1(modpack.hash), // TODO: double check this: does this use sha1 as the hashing function?
-            modrinth_pack_url: modpack.mrpack_url,
-            publish_timestamp: NaiveDateTime::from_str(&modpack.published_at)
-                .map_err(|_| ApiError::Processing("Failed to parse timestamp at the base_modpack field".to_string()))?
-                .and_utc()
-                .timestamp(),
-        }));
+        let base_modpack = response.base_modpack.map(|modpack| {
+            Ok(ModPackManifist {
+                version: modpack.version,
+                hash: Hash::Sha1(modpack.hash), // TODO: double check this: does this use sha1 as the hashing function?
+                modrinth_pack_url: modpack.mrpack_url,
+                publish_timestamp: NaiveDateTime::from_str(&modpack.published_at)
+                    .map_err(|_| {
+                        ApiError::Processing(
+                            "Failed to parse timestamp at the base_modpack field".to_string(),
+                        )
+                    })?
+                    .and_utc()
+                    .timestamp(),
+            })
+        });
 
         // unwrap the result in a safe way
         let base_modpack = match base_modpack {

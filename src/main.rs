@@ -11,7 +11,6 @@ pub(crate) mod consts;
 
 rust_i18n::i18n!("locales");
 
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use rust_i18n::t;

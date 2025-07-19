@@ -5,6 +5,7 @@ use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::de::DeserializeOwned;
 use crate::error::{ApiError, ApiResult};
 
+#[derive(Clone)]
 pub struct RawApiClient {
     pub client: Client,
     pub base_url: String,

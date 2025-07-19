@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct LaunchTypeArtifact {
     /// Differential URL of the artifact asset (to use if previous hash exists)
     #[serde(rename = "differentialUrl")]
-    pub differential_url: String,
+    pub differential_url: Option<String>,
     /// Last modification time of the artifact, in seconds since epoch
     pub mtime: f64,
     /// Name of the artifact
