@@ -21,3 +21,19 @@ page:
     title:
       en: About
       zh-CN: 关于
+
+about:
+  content:
+    en: |
+      We hate bloatware, Celestial.rs is an upgrade from the Kotlin version, doesn't use any browser, and is completely free!
+      Do you hate proprietary? Me too. Browser manufacturers don't care about your user experience.
+    zh-CN: |
+      我们讨厌臃肿的软件，Celestial.rs是Kotlin版本的升级，不使用任何浏览器，并且完全自由!
+      你讨厌专有吗?我也是。浏览器厂家并不在意你的用户体验。
+  metadata:
+    en: |
+      Build Metadata:
+      Version: %{version}
+    zh-CN: |
+      构建元信息
+      版本号: %{version}

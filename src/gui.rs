@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
 
 use component::main_window::MainWindowExt;
 use egui_inbox::UiInbox;
@@ -8,11 +8,29 @@ mod component;
 pub struct CelestialApp {
     state: AppState,
     inbox: Arc<UiInbox<AppState>>,
+
+    launch_state: LaunchState,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct AppState {
-    page: AppPage
+    page: AppPage,
+}
+
+#[derive(Default)]
+pub struct LaunchState {
+    pub status_text: String,
+    pub completed_tasks: usize,
+
+    pub tasks: VecDeque<()>, // TODO: replace with the real task type
+}
+
+impl LaunchState {
+    pub fn total_tasks(&self) -> usize {
+        return self.completed_tasks + self.tasks.len();
+    }
+
+    // TODO: submit task, set completed_tasks to 0 if all tasks completed
 }
 
 #[derive(serde::Deserialize, serde::Serialize, PartialEq, Eq)]
@@ -39,7 +57,8 @@ impl CelestialApp {
         } else {
             Default::default()
         };
-        Self { state, inbox }
+        let launch_state = Default::default();
+        Self { state, inbox, launch_state }
     }
 }
 
@@ -56,4 +75,3 @@ impl eframe::App for CelestialApp {
         });
     }
 }
-

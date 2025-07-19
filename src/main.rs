@@ -5,10 +5,12 @@ use egui::TextBuffer;
 use egui_inbox::UiInbox;
 use gui::CelestialApp;
 use log::error;
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub(crate) mod gui;
 
 rust_i18n::i18n!("locales");
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
