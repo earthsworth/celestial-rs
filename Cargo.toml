@@ -42,6 +42,9 @@ mockall = "0.13"
 tempfile = "3.20"
 mockito = "1.7"
 
+[build-dependencies]
+git2 = "0.20"
+
 [package.metadata.i18n]
 available-locales = ["en"]
 default-locale = "en"

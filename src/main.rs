@@ -4,10 +4,10 @@ use std::{backtrace::Backtrace, sync::Arc};
 use egui::TextBuffer;
 use egui_inbox::UiInbox;
 use gui::CelestialApp;
-use log::error;
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+use log::{error, info};
 
 pub(crate) mod gui;
+pub(crate) mod consts;
 
 rust_i18n::i18n!("locales");
 
@@ -16,6 +16,8 @@ rust_i18n::i18n!("locales");
 async fn main() -> anyhow::Result<()> {
     use rust_i18n::t;
     env_logger::init();
+
+    info!("Welcome to Celestial {} ({})!", consts::VERSION, consts::GIT_COMMIT_HASH);
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

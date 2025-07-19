@@ -33,7 +33,9 @@ about:
   metadata:
     en: |
       Build Metadata:
-      Version: %{version}
+      Version: %{version} (%{git_latest_commit})
+      Git Remote (origin): %{git_remote}
     zh-CN: |
       构建元信息
-      版本号: %{version}
+      版本号: %{version} (%{git_latest_commit})
+      Git 远程地址(origin): %{git_remote}
