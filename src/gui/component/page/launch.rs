@@ -12,7 +12,7 @@ impl LaunchPageExt for CelestialApp {
             ui.label("test");
         });
 
-        let progress = self.launch_state.completed_tasks as f32 / self.launch_state.total_tasks as f32;
+        let progress = self.launch_state.completed_tasks as f32 / self.launch_state.total_tasks() as f32;
         egui::TopBottomPanel::bottom("bottom_panel").show_animated_inside(
             ui,
             progress < 1.0,
