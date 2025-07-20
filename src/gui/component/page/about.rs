@@ -21,9 +21,9 @@ impl AboutPageExt for CelestialApp {
         ));
         // the open operation wont be executed if the clicked() condition is false
         if ui.link("https://lunarclient.top").clicked()
-            && open::that("https://lunarclient.top").is_err()
+            && let Err(err) = open::that("https://lunarclient.top")
         {
-            error!("Failed to open link: {}", Backtrace::capture());
+            error!("Failed to open link: {err}\n{}", Backtrace::capture());
         }
     }
 }

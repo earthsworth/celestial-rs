@@ -1,11 +1,17 @@
+use futures_util::StreamExt;
 use log::{error, info, warn};
-use std::path::PathBuf;
+use reqwest::Client;
+use std::{backtrace::Backtrace, path::PathBuf};
+use tokio::{
+    fs::{self, File},
+    io::AsyncWriteExt,
+};
 
 use thiserror::Error;
 
 use crate::{
     launch::local::Resource,
-    utils::hashing::{HashingError, compare_file_hash},
+    utils::hashing::{Hash, HashingError, compare_file_hash},
 };
 
 #[derive(Error, Debug)]
@@ -19,6 +25,18 @@ pub enum DownloadError {
         .resource.file_hash.value()
     )]
     NoRemoteUrlProvided { resource: Resource },
+
+    #[error("Error fetching file")]
+    Http(#[from] reqwest::Error),
+
+    #[error("IO Error")]
+    Io(#[from] std::io::Error),
+
+    #[error("Max retries exceeded when requesting to URL {url} (max_retries = {max_retries})")]
+    MaxRetriesExceeded { url: String, max_retries: u32 },
+
+    #[error("Failed to create parent folders of the path {0}")]
+    FailedCreateParentFolders(PathBuf),
 }
 
 /// Downlaod resource to target_dir/<hash_type>-<hash>
@@ -29,8 +47,10 @@ pub enum DownloadError {
 /// Return a vector if the operation produces new resources (it doesn't contains the provided
 /// resource)
 pub async fn download_resource(
+    client: &Client,
     target_dir: &PathBuf,
     resource: &Resource,
+    max_retries: u32,
 ) -> Result<Vec<Resource>, DownloadError> {
     let file_name = format!(
         "{}-{}",
@@ -89,9 +109,96 @@ pub async fn download_resource(
         remote_url
     );
 
-    // TODO: download file
+    // create parent folders of the file
+    fs::create_dir_all(
+        &file_path
+            .parent()
+            .ok_or(DownloadError::FailedCreateParentFolders(
+                file_path.to_owned(),
+            ))?,
+    )
+    .await?;
+
+    // create file
+    let mut file = File::create(&file_path).await?;
+
+    // download file
+    download_parallelly(
+        client,
+        remote_url,
+        &mut file,
+        Some(&resource.file_hash),
+        max_retries,
+    )
+    .await?;
+
     // TODO: extract the archive (optional)
     // TODO: add extern resources to vec
 
     Ok(Vec::new())
+}
+
+pub async fn download_parallelly(
+    client: &Client,
+    url: &str,
+    file: &mut File,
+    file_hash: Option<&Hash>,
+    max_retries: u32,
+) -> Result<(), DownloadError> {
+    // fetch file size
+    let res = client.head(url).send().await?;
+    let total_size: Option<usize> = res
+        .headers()
+        .get(reqwest::header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse().ok());
+
+    if total_size.is_none() {
+        // download in the single thread since Celestial cannot know the size of the file
+        return download_single_thread(client, url, file, file_hash, max_retries).await;
+    }
+
+    // TODO: parallelly download
+    Ok(())
+}
+
+pub async fn download_single_thread(
+    client: &Client,
+    url: &str,
+    file: &mut File,
+    file_hash: Option<&Hash>,
+    max_retries: u32,
+) -> Result<(), DownloadError> {
+    for retry_count in 1..=max_retries {
+        // get file
+        let result: anyhow::Result<()> = {
+            let mut stream = client.get(url).send().await?.bytes_stream();
+
+            // stream write file
+            while let Some(chunk) = stream.next().await {
+                let chunk = chunk?;
+                file.write_all(&chunk).await?;
+            }
+            // TODO: check hash
+            Ok(())
+        };
+
+        if let Err(err) = result {
+            error!(
+                "Error happened when download file (retry {retry_count}/{max_retries}): {err}, \n{}",
+                Backtrace::capture()
+            );
+        } else {
+            // operation success
+            return Ok(());
+        }
+    }
+    error!(
+        "Failed to download file with hash {}: Max retries exceeded",
+        file_hash.map(|hash| hash.value()).unwrap_or("<unknown hash>")
+    );
+    Err(DownloadError::MaxRetriesExceeded {
+        url: url.to_string(),
+        max_retries,
+    })
 }

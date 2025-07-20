@@ -27,12 +27,12 @@ async fn main() -> anyhow::Result<()> {
 
     let inbox = Arc::new(UiInbox::new());
 
-    if let Err(_err) = eframe::run_native(
+    if let Err(err) = eframe::run_native(
         t!("app.title").as_str(),
         native_options,
         Box::new(|cc| Ok(Box::new(CelestialApp::new(cc, Arc::clone(&inbox))))),
     ) {
-        error!("Ui ran into some errors: {}", Backtrace::capture());
+        error!("Ui ran into some errors: {}\n{}", err, Backtrace::capture());
     }
 
     Ok(())

@@ -11,6 +11,7 @@ fn main() {
     
     if env::var("GH_ACTIONS").is_ok() {
         // only do this in gh actions, this tooks lots of time on local development env
+        // This lags `cargo check` and rust-analyzer
 
         if let Ok(repo) = Repository::open(".") {
             if let Ok(id) = repo.refname_to_id("HEAD") {

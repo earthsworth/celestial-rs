@@ -11,5 +11,6 @@ pub struct PostPicsIdReportRequest {
     pub report_type: String,
     /// Cloudflare Turnstile token for spam protection
     #[serde(rename = "Turnstile-Token")]
-    pub turnstile__token: String,
+    pub turnstile_token: String,
 }
+

@@ -18,7 +18,7 @@ pub trait PicsApi {
     /// Rename a screenshot
     async fn patch_pics_rename(&self, authorization: String, body: &PatchPicsRenameRequest) -> ApiResult<PatchPicsRenameResponse>;
     /// Report a screenshot for inappropriate content or policy violations
-    async fn post_pics_id_report(&self, id: String, turnstile__token: String, authorization: Option<String>, body: &PostPicsIdReportRequest) -> ApiResult<PostPicsIdReportResponse>;
+    async fn post_pics_id_report(&self, id: String, turnstile_token: String, authorization: Option<String>, body: &PostPicsIdReportRequest) -> ApiResult<PostPicsIdReportResponse>;
 }
 
 #[async_trait]
@@ -53,11 +53,11 @@ impl PicsApi for RawApiClient {
         request = request.json(body);
         self.send_request::<PatchPicsRenameResponse>(request).await
     }
-    async fn post_pics_id_report(&self, id: String, turnstile__token: String, authorization: Option<String>, body: &PostPicsIdReportRequest) -> ApiResult<PostPicsIdReportResponse> {
+    async fn post_pics_id_report(&self, id: String, turnstile_token: String, authorization: Option<String>, body: &PostPicsIdReportRequest) -> ApiResult<PostPicsIdReportResponse> {
         let url = self.build_url(&format!("/pics/{}/report", &id.to_string()));
         let mut request = self.client.request(Method::POST, &url);
         if let Some(value) = authorization { request = request.header("Authorization", value); }
-        request = request.header("Turnstile-Token", turnstile__token);
+        request = request.header("Turnstile-Token", turnstile_token);
         request = request.json(body);
         self.send_request::<PostPicsIdReportResponse>(request).await
     }
