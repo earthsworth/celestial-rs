@@ -4,7 +4,7 @@ use crate::{environment::SystemEnvironment, error::ApiResult, hashing::Hash};
 
 use super::ApiClient;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LaunchLunarRequest {
     pub environment: SystemEnvironment,
     pub launcher_version: String,
@@ -17,7 +17,7 @@ pub struct LaunchLunarRequest {
     pub profile: Option<InstanceProfile>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum CanaryPreference {
     OptIn,
     OptOut,
@@ -35,20 +35,20 @@ impl CanaryPreference {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct InstanceProfile {
     pub id: String,
     pub name: String,
     pub modrinth: Option<ModrinthProfile>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ModrinthProfile {
     pub id: String,
     pub version_id: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LunarVersionManifist {
     pub main_class: String,
     pub artifacts: Vec<Artifact>,
@@ -59,26 +59,34 @@ pub struct LunarVersionManifist {
     pub jre_manifist: InstanceRuntimeManifist,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+pub struct LunarRemoteMetadata {
+    pub branch: String,
+    pub version: String,
+    pub module: String,
+}
+
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct BrowserUiManifist {
     pub source_url: String,
     pub source_hash: Hash,
     pub assets: BrowserUiAssets,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct BrowserUiAssets {
     pub base_url: String,
     pub index_url: String,
     pub index_hash: Hash,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct InstanceRuntimeManifist {
     pub extra_vm_options: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Artifact {
     pub name: String,
     pub hash: Hash,
@@ -88,7 +96,7 @@ pub struct Artifact {
     pub modify_time: Option<f64>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ModPackManifist {
     pub version: String,
     pub hash: Hash,
@@ -96,7 +104,7 @@ pub struct ModPackManifist {
     pub publish_timestamp: i64,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum ArtifactType {
     Unknown, // not supported by Celestial
 
@@ -107,7 +115,7 @@ pub enum ArtifactType {
     Javaagent, // Celestial special
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TexturesManifist {
     pub index_url: String,
     pub index_hash: Hash,
@@ -116,18 +124,18 @@ pub struct TexturesManifist {
     pub base_url: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LunarVersionsMetadata {
     pub versions: Vec<LunarVersionMetadata>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LunarVersionMetadata {
     pub version: String, // id in the origin json
     pub available_modules: Vec<LunarModuleMetadata>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct LunarModuleMetadata {
     pub id: String, // id field in the origin json
     pub name: String,
@@ -139,6 +147,8 @@ pub struct LunarModuleMetadata {
 pub trait LaunchExt: ApiClient {
     async fn launch_lunar(&self, request: LaunchLunarRequest) -> ApiResult<LunarVersionManifist>;
     // TODO: launch vanilla
-    async fn list_available_lunar_versions(&self, branch: Option<&str>)
-    -> ApiResult<LunarVersionsMetadata>;
+    async fn list_available_lunar_versions(
+        &self,
+        branch: Option<&str>,
+    ) -> ApiResult<LunarVersionsMetadata>;
 }

@@ -1,7 +1,7 @@
 use std::env;
 
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SystemEnvironment {
     pub os: Os,
     pub arch: Arch,
@@ -20,7 +20,7 @@ impl SystemEnvironment {
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Os {
     // Unsupported platform
     Unsupported,
@@ -48,7 +48,7 @@ impl Os {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Arch {
     // Unsupported arch
     Unsupported,
