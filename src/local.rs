@@ -1,38 +1,82 @@
 use std::collections::HashMap;
 
 use crate::{
-    api::launch::{LunarRemoteMetadata, LunarVersionManifist},
+    api::{
+        launch::{LunarRemoteMetadata, LunarVersionManifest},
+        remote::get_and_verify_hash,
+    },
     hashing::Hash,
 };
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum LocalManifist {
+pub enum LocalManifest {
     Lunar {
+        /// The upstream of this manifest
         remote_metdata: Option<LunarRemoteMetadata>,
-        remote_manifist: Option<LunarVersionManifist>,
+        /// A flag to control the auto update feature
         locked: bool, // false => roll update, true => lock on current version
-        file_link_map: HashMap<String, Hash>, // file_hash: file_path
+        resources: Vec<Resource>, // file_hash: file_path
 
         addons: Vec<Addon>,
     },
     // TODO: vanilla version
 }
 
-impl LocalManifist {
-    pub fn parse_from_lunar_manifist(remote_metadata: Option<LunarRemoteMetadata>, manifist: LunarVersionManifist) -> Self {
-        let mut file_link_map = HashMap::new();
-        // add artifacts
-        let artifact_files = manifist.artifacts.iter().cloned().map(|artifact| (artifact.name, artifact.hash));
-        file_link_map.extend(artifact_files);
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Resource {
+    /// The relative path to link the file to
+    file_relative_path: String,
+    /// The hash of the resource
+    file_hash: Hash,
+    /// A remote url tracks this run
+    remote_url: Option<String>,
+}
 
-        // add textures
+impl LocalManifest {
+    pub async fn from_lunar_manifest(
+        client: &reqwest::Client,
+        remote_metadata: Option<LunarRemoteMetadata>,
+        manifest: LunarVersionManifest,
+    ) -> anyhow::Result<Self> {
+        let mut resources = Vec::new();
+        // add artifacts
+        let artifact_files = manifest.artifacts.iter().cloned().map(|artifact| Resource {
+            file_hash: artifact.hash,
+            file_relative_path: artifact.name,
+            remote_url: Some(artifact.url),
+        });
+        resources.extend(artifact_files);
+
         // fetch textures
-        
+        let textures_index = get_and_verify_hash(
+            client,
+            &manifest.textures.index_url,
+            &manifest.textures.index_hash,
+        )
+        .await?;
+        let textures_index = std::str::from_utf8(&textures_index)?.lines();
+        let textures = textures_index.map(|line| line.splitn(4, " ")).map(|split| {
+            let mut split = split;
+            let (file_path, hash) = (split.next().unwrap(), split.next().unwrap());
+            Resource {
+                file_relative_path: format!("textures/{file_path}"),
+                file_hash: Hash::Sha1(hash.to_string()),
+                remote_url: Some(format!("{}{}", &manifest.textures.base_url, hash)),
+            }
+        });
+        // add textures
+        resources.extend(textures);
+
         // TODO: add ui files
 
         // PLEASE NOTICE THAT: ui and natives files should added when Celestial extract them, we cannot get
         // the file map via the api.
-        Self::Lunar { remote_metdata: remote_metadata, remote_manifist: Some(manifist), locked: true, file_link_map, addons: Vec::new() }
+        Ok(Self::Lunar {
+            remote_metdata: remote_metadata,
+            locked: true,
+            resources,
+            addons: Vec::new(),
+        })
     }
 }
 
@@ -49,4 +93,36 @@ pub enum AddonType {
     Javaagent,
     WeaveMod,
     FabricMod,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        api::launch::{CanaryPreference, LaunchExt},
+        local::LocalManifest,
+    };
+
+    #[tokio::test]
+    async fn it_works() {
+        let client = reqwest::Client::new();
+        let api_client = crate::api::remote::client::RemoteApiClient::new(
+            &client,
+            "https://api.lunarclientprod.com",
+        );
+        let manifest = api_client
+            .launch_lunar(crate::api::launch::LaunchLunarRequest {
+                environment: crate::environment::SystemEnvironment::from_current_env(),
+                launcher_version: "10.0.0".to_string(),
+                canary_preference: Some(CanaryPreference::OptIn),
+                branch: "master".to_string(),
+                version: "1.8.9".to_string(),
+                module: "lunar".to_string(),
+                profile: None,
+            })
+            .await
+            .unwrap();
+        // create local manifest
+        let local_manifest = LocalManifest::from_lunar_manifest(&client, None, manifest).await;
+        dbg!(&local_manifest);
+    }
 }

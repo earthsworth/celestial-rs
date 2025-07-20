@@ -11,9 +11,9 @@ use crate::{
     api::{
         ApiClient,
         launch::{
-            Artifact, ArtifactType, BrowserUiAssets, BrowserUiManifist, InstanceRuntimeManifist,
-            LaunchExt, LaunchLunarRequest, LunarModuleMetadata, LunarVersionManifist,
-            LunarVersionMetadata, LunarVersionsMetadata, ModPackManifist, TexturesManifist,
+            Artifact, ArtifactType, BrowserUiAssets, BrowserUiManifest, InstanceRuntimeManifest,
+            LaunchExt, LaunchLunarRequest, LunarModuleMetadata, LunarVersionManifest,
+            LunarVersionMetadata, LunarVersionsMetadata, ModPackManifest, TexturesManifest,
         },
     },
     environment::{Arch, Os},
@@ -54,9 +54,9 @@ pub struct RemoteApiClient {
 }
 
 impl RemoteApiClient {
-    pub fn new(client: Client, base_url: &str) -> Self {
+    pub fn new(client: &Client, base_url: &str) -> Self {
         let raw_client = RawApiClient {
-            client,
+            client: client.to_owned(),
             base_url: base_url.to_string(),
         };
         Self { raw_client }
@@ -67,7 +67,7 @@ impl ApiClient for RemoteApiClient {}
 
 #[async_trait]
 impl LaunchExt for RemoteApiClient {
-    async fn launch_lunar(&self, request: LaunchLunarRequest) -> ApiResult<LunarVersionManifist> {
+    async fn launch_lunar(&self, request: LaunchLunarRequest) -> ApiResult<LunarVersionManifest> {
         let os = match request.environment.os {
             Os::Windows => "win32",
             Os::Linux => "linux",
@@ -116,7 +116,7 @@ impl LaunchExt for RemoteApiClient {
 
         let response = self.raw_client.post_launcher_launch(&body).await?;
         // parse response
-        let jre_manifist = InstanceRuntimeManifist {
+        let jre_manifist = InstanceRuntimeManifest {
             extra_vm_options: response.jre.map_or(Vec::new(), |data| data.extra_arguments),
         };
 
@@ -148,7 +148,7 @@ impl LaunchExt for RemoteApiClient {
 
         let textures = response
             .textures
-            .map(|data| TexturesManifist {
+            .map(|data| TexturesManifest {
                 index_url: data.index_url,
                 index_hash: Hash::Sha1(data.index_sha1),
                 jit_index_url: data.jit_index_url,
@@ -159,7 +159,7 @@ impl LaunchExt for RemoteApiClient {
                 "Field textures was None on response".to_string(),
             ))?;
 
-        let ui_manifist = response.ui.map(|ui| BrowserUiManifist {
+        let ui_manifist = response.ui.map(|ui| BrowserUiManifest {
             source_url: ui.source_url,
             source_hash: Hash::Sha1(ui.source_sha1),
             assets: BrowserUiAssets {
@@ -170,7 +170,7 @@ impl LaunchExt for RemoteApiClient {
         });
 
         let base_modpack = response.base_modpack.map(|modpack| {
-            Ok(ModPackManifist {
+            Ok(ModPackManifest {
                 version: modpack.version,
                 hash: Hash::Sha1(modpack.hash), // TODO: double check this: does this use sha1 as the hashing function?
                 modrinth_pack_url: modpack.mrpack_url,
@@ -194,7 +194,7 @@ impl LaunchExt for RemoteApiClient {
             None => None,
         };
 
-        let result = LunarVersionManifist {
+        let result = LunarVersionManifest {
             main_class: launch_type_data.main_class,
             artifacts,
             textures,

@@ -49,14 +49,14 @@ pub struct ModrinthProfile {
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub struct LunarVersionManifist {
+pub struct LunarVersionManifest {
     pub main_class: String,
     pub artifacts: Vec<Artifact>,
-    pub textures: TexturesManifist,
+    pub textures: TexturesManifest,
     pub canary_token: Option<String>,
-    pub base_modpack: Option<ModPackManifist>,
-    pub ui_manifist: Option<BrowserUiManifist>, // this doesn't exist on legacy api implementations
-    pub jre_manifist: InstanceRuntimeManifist,
+    pub base_modpack: Option<ModPackManifest>,
+    pub ui_manifist: Option<BrowserUiManifest>, // this doesn't exist on legacy api implementations
+    pub jre_manifist: InstanceRuntimeManifest,
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
@@ -67,7 +67,7 @@ pub struct LunarRemoteMetadata {
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub struct BrowserUiManifist {
+pub struct BrowserUiManifest {
     pub source_url: String,
     pub source_hash: Hash,
     pub assets: BrowserUiAssets,
@@ -81,7 +81,7 @@ pub struct BrowserUiAssets {
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub struct InstanceRuntimeManifist {
+pub struct InstanceRuntimeManifest {
     pub extra_vm_options: Vec<String>,
 }
 
@@ -97,7 +97,7 @@ pub struct Artifact {
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub struct ModPackManifist {
+pub struct ModPackManifest {
     pub version: String,
     pub hash: Hash,
     pub modrinth_pack_url: String,
@@ -116,7 +116,7 @@ pub enum ArtifactType {
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub struct TexturesManifist {
+pub struct TexturesManifest {
     pub index_url: String,
     pub index_hash: Hash,
     pub jit_index_url: String,
@@ -145,7 +145,7 @@ pub struct LunarModuleMetadata {
 
 #[async_trait]
 pub trait LaunchExt: ApiClient {
-    async fn launch_lunar(&self, request: LaunchLunarRequest) -> ApiResult<LunarVersionManifist>;
+    async fn launch_lunar(&self, request: LaunchLunarRequest) -> ApiResult<LunarVersionManifest>;
     // TODO: launch vanilla
     async fn list_available_lunar_versions(
         &self,
