@@ -174,12 +174,31 @@ pub async fn download_single_thread(
         let result: anyhow::Result<()> = {
             let mut stream = client.get(url).send().await?.bytes_stream();
 
+            let mut hasher = file_hash.map(|hash| hash.create_hasher());
             // stream write file
             while let Some(chunk) = stream.next().await {
                 let chunk = chunk?;
                 file.write_all(&chunk).await?;
+
+                // update hasher if possible
+                hasher
+                    .iter_mut()
+                    .next()
+                    .map(|hasher| hasher.update(&chunk))
+                    .unwrap_or(());
             }
-            // TODO: check hash
+            // check hash
+            if let Some(file_hash) = file_hash {
+                // compare hash
+                let hasher = hasher.unwrap();
+                let actual_hash = hex::encode(hasher.finalize());
+                if file_hash.value() != actual_hash {
+                    return Err(DownloadError::Hashing(HashingError::HashNotMatch {
+                        expected_hash: file_hash.to_owned(),
+                        actual_hash: actual_hash,
+                    }));
+                }
+            }
             Ok(())
         };
 
@@ -195,7 +214,9 @@ pub async fn download_single_thread(
     }
     error!(
         "Failed to download file with hash {}: Max retries exceeded",
-        file_hash.map(|hash| hash.value()).unwrap_or("<unknown hash>")
+        file_hash
+            .map(|hash| hash.value())
+            .unwrap_or("<unknown hash>")
     );
     Err(DownloadError::MaxRetriesExceeded {
         url: url.to_string(),

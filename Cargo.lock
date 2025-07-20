@@ -683,6 +683,7 @@ dependencies = [
  "env_logger",
  "futures-util",
  "git2",
+ "hex",
  "log",
  "md-5",
  "mockall",
