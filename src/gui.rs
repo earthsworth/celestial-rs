@@ -27,7 +27,7 @@ pub struct LaunchState {
 
 impl LaunchState {
     pub fn total_tasks(&self) -> usize {
-        return self.completed_tasks + self.tasks.len();
+        self.completed_tasks + self.tasks.len()
     }
 
     // TODO: submit task, set completed_tasks to 0 if all tasks completed

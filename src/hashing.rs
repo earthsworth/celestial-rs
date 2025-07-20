@@ -55,9 +55,9 @@ impl Hash {
 
 /// Compare file hash with expected hash
 /// Returns Ok(()) if hash matches, Err if file doesn't exist or hash doesn't match
-pub async fn compare_file_hash<'a>(
-    file_path: &'a Path,
-    expected_hash: &'a Hash,
+pub async fn compare_file_hash(
+    file_path: &Path,
+    expected_hash: &Hash,
 ) -> Result<(), HashingError> {
     // Check if file exists
     if !file_path.exists() {
@@ -109,9 +109,9 @@ pub async fn compare_file_hash<'a>(
 }
 
 /// Calculate hash for a file
-pub async fn calculate_file_hash<'a>(
-    file_path: &'a Path,
-    hash_type: &'a str,
+pub async fn calculate_file_hash(
+    file_path: &Path,
+    hash_type: &str,
 ) -> Result<Hash, HashingError> {
     if !file_path.exists() {
         return Err(HashingError::FileNotFound { file_path: Box::new(file_path.to_owned()) });
