@@ -200,8 +200,8 @@ impl LaunchExt for RemoteApiClient {
             textures,
             canary_token: response.canary_token,
             base_modpack,
-            ui_manifist,
-            jre_manifist,
+            ui_manifest: ui_manifist,
+            jre_manifest: jre_manifist,
         };
         Ok(result)
     }

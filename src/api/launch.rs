@@ -55,8 +55,8 @@ pub struct LunarVersionManifest {
     pub textures: TexturesManifest,
     pub canary_token: Option<String>,
     pub base_modpack: Option<ModPackManifest>,
-    pub ui_manifist: Option<BrowserUiManifest>, // this doesn't exist on legacy api implementations
-    pub jre_manifist: InstanceRuntimeManifest,
+    pub ui_manifest: Option<BrowserUiManifest>, // this doesn't exist on legacy api implementations
+    pub jre_manifest: InstanceRuntimeManifest,
 }
 
 #[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
