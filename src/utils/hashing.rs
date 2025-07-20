@@ -1,8 +1,12 @@
 use bytes::Bytes;
+use digest::{generic_array::ArrayLength, Digest, OutputSizeUser};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::{
+    ops::Add,
+    path::{Path, PathBuf},
+};
 use thiserror::Error;
-use tokio::fs;
+use tokio::io::{AsyncReadExt, BufReader};
 
 #[derive(Error, Debug)]
 pub enum HashingError {
@@ -53,51 +57,70 @@ impl Hash {
     }
 }
 
-/// Compare file hash with expected hash
-/// Returns Ok(()) if hash matches, Err if file doesn't exist or hash doesn't match
+/// Asynchronously streams a file and calculates its hash using a generic hasher.
+///
+/// This function reads the file in chunks to keep memory usage low, making it
+/// suitable for large files.
+///
+/// # Arguments
+/// * `file_path`: The path to the file to hash.
+///
+/// # Type Parameters
+/// * `D`: The hash algorithm to use, which must implement the `digest::Digest` trait.
+///
+/// # Returns
+/// A `Result` containing the lowercase hex-encoded hash string, or a `HashingError`.
+async fn stream_and_hash<D: Digest>(file_path: &Path) -> Result<String, HashingError>
+where
+    <D as OutputSizeUser>::OutputSize: Add,
+    <<D as OutputSizeUser>::OutputSize as Add>::Output: ArrayLength<u8>,
+{
+    if !file_path.exists() {
+        return Err(HashingError::FileNotFound {
+            file_path: Box::new(file_path.to_owned()),
+        });
+    }
+
+    let file = tokio::fs::File::open(file_path)
+        .await
+        .map_err(HashingError::from)?;
+
+    let mut reader = BufReader::new(file);
+    let mut hasher = D::new();
+    let mut buffer = [0; 8192]; // 8KB buffer
+
+    loop {
+        let bytes_read = reader.read(&mut buffer).await.map_err(HashingError::from)?;
+        if bytes_read == 0 {
+            // EOF
+            break;
+        }
+        hasher.update(&buffer[..bytes_read]);
+    }
+
+    let result = hasher.finalize();
+    Ok(format!("{:x}", result))
+}
+
+/// Compare file hash with expected hash.
+/// The file is read in a stream to support large files without high memory consumption.
+/// Returns Ok(()) if hash matches, Err if file doesn't exist or hash doesn't match.
 pub async fn compare_file_hash(
     file_path: &Path,
     expected_hash: &Hash,
 ) -> Result<(), HashingError> {
-    // Check if file exists
-    if !file_path.exists() {
-        return Err(HashingError::FileNotFound { file_path: Box::new(file_path.to_owned()) });
-    }
+    use md5::Md5;
+    use sha1::Sha1;
+    use sha2::{Sha256, Sha512};
 
-    // Read file content
-    let file_content = fs::read(file_path)
-        .await
-        .map_err(|e| HashingError::from(e))?;
-
-    // Calculate hash based on expected hash type
     let calculated_hash = match expected_hash {
-        Hash::Md5(_) => {
-            use md5::compute;
-            let result = compute(file_content);
-            format!("{result:x}")
-        }
-        Hash::Sha1(_) => {
-            use sha1::{Digest, Sha1};
-            let mut hasher = Sha1::new();
-            hasher.update(&file_content);
-            format!("{:x}", hasher.finalize())
-        }
-        Hash::Sha256(_) => {
-            use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(&file_content);
-            format!("{:x}", hasher.finalize())
-        }
-        Hash::Sha512(_) => {
-            use sha2::{Digest, Sha512};
-            let mut hasher = Sha512::new();
-            hasher.update(&file_content);
-            format!("{:x}", hasher.finalize())
-        }
+        Hash::Md5(_) => stream_and_hash::<Md5>(file_path).await?,
+        Hash::Sha1(_) => stream_and_hash::<Sha1>(file_path).await?,
+        Hash::Sha256(_) => stream_and_hash::<Sha256>(file_path).await?,
+        Hash::Sha512(_) => stream_and_hash::<Sha512>(file_path).await?,
     };
 
-    // Compare hashes (case-insensitive)
-    if calculated_hash.to_lowercase() == expected_hash.value().to_lowercase() {
+    if calculated_hash.eq_ignore_ascii_case(expected_hash.value()) {
         Ok(())
     } else {
         Err(HashingError::FileHashNotMatch {
@@ -108,58 +131,35 @@ pub async fn compare_file_hash(
     }
 }
 
-/// Calculate hash for a file
+/// Calculate hash for a file.
+/// The file is read in a stream to support large files without high memory consumption.
 pub async fn calculate_file_hash(
     file_path: &Path,
     hash_type: &str,
 ) -> Result<Hash, HashingError> {
-    if !file_path.exists() {
-        return Err(HashingError::FileNotFound { file_path: Box::new(file_path.to_owned()) });
-    }
-
-    let file_content = fs::read(file_path)
-        .await
-        .map_err(|e| HashingError::from(e))?;
+    use md5::Md5;
+    use sha1::Sha1;
+    use sha2::{Sha256, Sha512};
 
     let hash = match hash_type.to_uppercase().as_str() {
-        "MD5" => {
-            use md5::compute;
-            let result = compute(file_content);
-            Hash::Md5(format!("{result:x}"))
-        }
-        "SHA1" => {
-            use sha1::{Digest, Sha1};
-            let mut hasher = Sha1::new();
-            hasher.update(&file_content);
-            Hash::Sha1(format!("{:x}", hasher.finalize()))
-        }
-        "SHA256" => {
-            use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(&file_content);
-            Hash::Sha256(format!("{:x}", hasher.finalize()))
-        }
-        "SHA512" => {
-            use sha2::{Digest, Sha512};
-            let mut hasher = Sha512::new();
-            hasher.update(&file_content);
-            Hash::Sha512(format!("{:x}", hasher.finalize()))
-        }
+        "MD5" => Hash::Md5(stream_and_hash::<Md5>(file_path).await?),
+        "SHA1" => Hash::Sha1(stream_and_hash::<Sha1>(file_path).await?),
+        "SHA256" => Hash::Sha256(stream_and_hash::<Sha256>(file_path).await?),
+        "SHA512" => Hash::Sha512(stream_and_hash::<Sha512>(file_path).await?),
         _ => return Err(HashingError::UnsupportedHashFunction(hash_type.to_string())),
     };
 
     Ok(hash)
-}
-
-/// Compare bytes hash with expected hash
+}/// Compare bytes hash with expected hash
 /// Returns Ok(()) if hash matches, Err if file doesn't exist or hash doesn't match
 pub async fn compare_hash(bytes: &Bytes, expected_hash: &Hash) -> Result<(), HashingError> {
     // Calculate hash based on expected hash type
     let calculated_hash = match expected_hash {
         Hash::Md5(_) => {
-            use md5::compute;
-            let result = compute(bytes);
-            format!("{result:x}")
+            use md5::{Digest, Md5};
+            let mut hasher = Md5::new();
+            hasher.update(&bytes);
+            format!("{:x}", hasher.finalize())
         }
         Hash::Sha1(_) => {
             use sha1::{Digest, Sha1};

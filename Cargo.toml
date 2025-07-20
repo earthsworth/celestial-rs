@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+digest = "*"
 bytes = "1.10"
 egui = "0.32"
 eframe = { version = "0.32", default-features = false, features = [
@@ -33,7 +34,7 @@ reqwest = { version = "0.12", features = ["json"] }
 anyhow = "1.0"
 open = "5.3"
 uuid = { version = "1.17", features = ["v4"] }
-md5 = "0.8"
+md-5 = "0.10"
 sha2 = "0.10"
 sha1 = "0.10"
 async-trait = "0.1"

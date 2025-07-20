@@ -9,16 +9,14 @@ use uuid::Uuid;
 
 use crate::{
     api::{
-        ApiClient,
         launch::{
             Artifact, ArtifactType, BrowserUiAssets, BrowserUiManifest, InstanceRuntimeManifest,
             LaunchExt, LaunchLunarRequest, LunarModuleMetadata, LunarVersionManifest,
             LunarVersionMetadata, LunarVersionsMetadata, ModPackManifest, TexturesManifest,
-        },
+        }, ApiClient
     },
     environment::{Arch, Os},
-    error::{ApiError, ApiResult},
-    hashing::Hash,
+    error::{ApiError, ApiResult}, utils::hashing::Hash,
 };
 
 use super::models::{LauncherProfile, LauncherProfileModrinth, PostLauncherLaunchRequest};

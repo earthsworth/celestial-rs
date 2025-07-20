@@ -1,11 +1,9 @@
-use std::str::Lines;
-
 use crate::{
     api::{
         launch::{LunarRemoteMetadata, LunarVersionManifest},
         remote::get_and_verify_hash,
     },
-    hashing::Hash,
+    utils::hashing::Hash,
 };
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -26,12 +24,16 @@ pub enum LocalManifest {
 pub struct Resource {
     /// The relative path to link the file to.
     /// if is_archive is true, this will be the extract dir
-    file_relative_path: String,
+    pub file_relative_path: String,
     /// The hash of the resource
-    file_hash: Hash,
+    pub file_hash: Hash,
     /// A remote url tracks this run
-    remote_url: Option<String>,
-    is_archive: bool,
+    pub remote_url: Option<String>,
+    /// Is this file an archive file? Like .zip, .tar.gz and .7z
+    /// Celestial will create extern resources from the archive
+    pub is_archive: bool,
+    /// reference to an archive file contains this resource
+    pub from_archive: Option<Box<Resource>>,
 }
 
 impl LocalManifest {
@@ -47,6 +49,7 @@ impl LocalManifest {
             file_relative_path: artifact.name,
             remote_url: Some(artifact.url),
             is_archive: false,
+            from_archive: None,
         });
         resources.extend(artifact_files);
 
@@ -69,20 +72,24 @@ impl LocalManifest {
                 file_hash: ui_manifest.source_hash,
                 remote_url: Some(ui_manifest.source_url),
                 is_archive: true,
+                from_archive: None,
             };
             resources.push(ui_source_resource);
 
             // add ui assets
             let ui_assets_manifest = ui_manifest.assets;
-            let ui_assets_index =
-                get_and_verify_hash(client, &ui_assets_manifest.index_url, &ui_assets_manifest.index_hash).await?;
+            let ui_assets_index = get_and_verify_hash(
+                client,
+                &ui_assets_manifest.index_url,
+                &ui_assets_manifest.index_hash,
+            )
+            .await?;
             let ui_assets_index = std::str::from_utf8(&ui_assets_index)?.lines();
 
             let ui_assets = parse_index(ui_assets_index, "ui/assets", &ui_assets_manifest.base_url);
             // add ui_assets to resources vec
             resources.extend(ui_assets);
         }
-        // TODO: process natives
 
         // PLEASE NOTICE THAT: ui and natives files should added when Celestial extract them, we cannot get
         // the file map via the api.
@@ -110,7 +117,11 @@ pub enum AddonType {
     FabricMod,
 }
 
-fn parse_index(index: std::str::Lines<'_>, base_dir: &str, base_url: &str) -> impl Iterator<Item = Resource> {
+fn parse_index(
+    index: std::str::Lines<'_>,
+    base_dir: &str,
+    base_url: &str,
+) -> impl Iterator<Item = Resource> {
     index.map(|line| line.splitn(4, " ")).map(move |split| {
         let mut split = split;
         let (file_path, hash) = (split.next().unwrap(), split.next().unwrap());
@@ -119,6 +130,7 @@ fn parse_index(index: std::str::Lines<'_>, base_dir: &str, base_url: &str) -> im
             file_hash: Hash::Sha1(hash.to_string()),
             remote_url: Some(format!("{}{}", base_url, hash)),
             is_archive: false,
+            from_archive: None,
         }
     })
 }
@@ -127,7 +139,7 @@ fn parse_index(index: std::str::Lines<'_>, base_dir: &str, base_url: &str) -> im
 mod tests {
     use crate::{
         api::launch::{CanaryPreference, LaunchExt},
-        local::LocalManifest,
+        launch::local::LocalManifest,
     };
 
     #[tokio::test]

@@ -2,7 +2,7 @@ use bytes::Bytes;
 use reqwest::Client;
 use thiserror::Error;
 
-use crate::hashing::{self, Hash};
+use crate::utils::hashing::{self, Hash};
 
 pub mod client;
 pub mod models;

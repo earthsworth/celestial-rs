@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{environment::SystemEnvironment, error::ApiResult, hashing::Hash};
+use crate::{environment::SystemEnvironment, error::ApiResult, utils::hashing::Hash};
 
 use super::ApiClient;
 
