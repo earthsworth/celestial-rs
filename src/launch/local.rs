@@ -65,6 +65,9 @@ impl LocalManifest {
         // add textures
         resources.extend(textures);
 
+        // NOTE: jit index is unused in the Typescript + Electron implementation, so we cannot know the behavier of
+        // this stuff
+
         // add ui files
         if let Some(ui_manifest) = manifest.ui_manifest {
             let ui_source_resource = Resource {

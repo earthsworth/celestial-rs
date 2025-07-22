@@ -154,25 +154,25 @@ pub async fn compare_hash(bytes: &Bytes, expected_hash: &Hash) -> Result<(), Has
         Hash::Md5(_) => {
             use md5::{Digest, Md5};
             let mut hasher = Md5::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
         Hash::Sha1(_) => {
             use sha1::{Digest, Sha1};
             let mut hasher = Sha1::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
         Hash::Sha256(_) => {
             use sha2::{Digest, Sha256};
             let mut hasher = Sha256::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
         Hash::Sha512(_) => {
             use sha2::{Digest, Sha512};
             let mut hasher = Sha512::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
     };
