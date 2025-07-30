@@ -1,4 +1,7 @@
 pub(crate) mod hashing;
+pub mod stream;
+pub mod tempfile_async;
+pub mod timestamp;
 
 use std::io;
 use std::path::Path;

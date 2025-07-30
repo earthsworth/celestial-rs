@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use digest::{generic_array::ArrayLength, Digest, OutputSizeUser};
+use digest::{Digest, OutputSizeUser, generic_array::ArrayLength};
 use serde::{Deserialize, Serialize};
 use std::{
     ops::Add,
@@ -55,6 +55,15 @@ impl Hash {
             Hash::Md5(v) | Hash::Sha1(v) | Hash::Sha256(v) | Hash::Sha512(v) => v,
         }
     }
+
+    pub fn create_hasher(&self) -> Box<dyn digest::DynDigest> {
+        match self {
+            Hash::Md5(_) => Box::new(md5::Md5::new()),
+            Hash::Sha1(_) => Box::new(sha1::Sha1::new()),
+            Hash::Sha256(_) => Box::new(sha2::Sha256::new()),
+            Hash::Sha512(_) => Box::new(sha2::Sha512::new()),
+        }
+    }
 }
 
 /// Asynchronously streams a file and calculates its hash using a generic hasher.
@@ -105,20 +114,9 @@ where
 /// Compare file hash with expected hash.
 /// The file is read in a stream to support large files without high memory consumption.
 /// Returns Ok(()) if hash matches, Err if file doesn't exist or hash doesn't match.
-pub async fn compare_file_hash(
-    file_path: &Path,
-    expected_hash: &Hash,
-) -> Result<(), HashingError> {
-    use md5::Md5;
-    use sha1::Sha1;
-    use sha2::{Sha256, Sha512};
-
-    let calculated_hash = match expected_hash {
-        Hash::Md5(_) => stream_and_hash::<Md5>(file_path).await?,
-        Hash::Sha1(_) => stream_and_hash::<Sha1>(file_path).await?,
-        Hash::Sha256(_) => stream_and_hash::<Sha256>(file_path).await?,
-        Hash::Sha512(_) => stream_and_hash::<Sha512>(file_path).await?,
-    };
+pub async fn compare_file_hash(file_path: &Path, expected_hash: &Hash) -> Result<(), HashingError> {
+    let calculated_hash = calculate_file_hash(file_path, expected_hash.hash_type()).await?;
+    let calculated_hash = calculated_hash.value();
 
     if calculated_hash.eq_ignore_ascii_case(expected_hash.value()) {
         Ok(())
@@ -126,17 +124,14 @@ pub async fn compare_file_hash(
         Err(HashingError::FileHashNotMatch {
             file_path: Box::new(file_path.to_owned()),
             expected_hash: expected_hash.to_owned(),
-            actual_hash: calculated_hash,
+            actual_hash: calculated_hash.to_string(),
         })
     }
 }
 
 /// Calculate hash for a file.
 /// The file is read in a stream to support large files without high memory consumption.
-pub async fn calculate_file_hash(
-    file_path: &Path,
-    hash_type: &str,
-) -> Result<Hash, HashingError> {
+pub async fn calculate_file_hash(file_path: &Path, hash_type: &str) -> Result<Hash, HashingError> {
     use md5::Md5;
     use sha1::Sha1;
     use sha2::{Sha256, Sha512};
@@ -150,7 +145,8 @@ pub async fn calculate_file_hash(
     };
 
     Ok(hash)
-}/// Compare bytes hash with expected hash
+}
+/// Compare bytes hash with expected hash
 /// Returns Ok(()) if hash matches, Err if file doesn't exist or hash doesn't match
 pub async fn compare_hash(bytes: &Bytes, expected_hash: &Hash) -> Result<(), HashingError> {
     // Calculate hash based on expected hash type
@@ -158,25 +154,25 @@ pub async fn compare_hash(bytes: &Bytes, expected_hash: &Hash) -> Result<(), Has
         Hash::Md5(_) => {
             use md5::{Digest, Md5};
             let mut hasher = Md5::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
         Hash::Sha1(_) => {
             use sha1::{Digest, Sha1};
             let mut hasher = Sha1::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
         Hash::Sha256(_) => {
             use sha2::{Digest, Sha256};
             let mut hasher = Sha256::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
         Hash::Sha512(_) => {
             use sha2::{Digest, Sha512};
             let mut hasher = Sha512::new();
-            hasher.update(&bytes);
+            hasher.update(bytes);
             format!("{:x}", hasher.finalize())
         }
     };
