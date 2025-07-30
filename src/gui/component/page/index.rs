@@ -1,6 +1,4 @@
 use egui::{Color32, Ui};
-use tokio::runtime::{Builder, Runtime};
-use celestial_rs::utils;
 use crate::gui::CelestialApp;
 
 pub trait IndexPageExt {

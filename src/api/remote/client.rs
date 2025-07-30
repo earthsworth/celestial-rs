@@ -9,42 +9,44 @@ use uuid::Uuid;
 
 use crate::{
     api::{
+        ApiClient,
         launch::{
             Artifact, ArtifactType, BrowserUiAssets, BrowserUiManifest, InstanceRuntimeManifest,
             LaunchExt, LaunchLunarRequest, LunarModuleMetadata, LunarVersionManifest,
             LunarVersionMetadata, LunarVersionsMetadata, ModPackManifest, TexturesManifest,
-        }, ApiClient
+        },
     },
     environment::{Arch, Os},
-    error::{ApiError, ApiResult}, utils::hashing::Hash,
+    error::{ApiError, ApiResult},
+    utils::hashing::Hash,
 };
 
 use super::models::{LauncherProfile, LauncherProfileModrinth, PostLauncherLaunchRequest};
 
-pub mod apollo_api;
+// pub mod apollo_api;
 pub mod core;
-pub mod deploy_api;
-pub mod discord_api;
-pub mod fabric_api;
-pub mod forge_api;
-pub mod game_api;
-pub mod hosted_world_api;
-pub mod index_api;
-pub mod internal_api;
+// pub mod deploy_api;
+// pub mod discord_api;
+// pub mod fabric_api;
+// pub mod forge_api;
+// pub mod game_api;
+// pub mod hosted_world_api;
+// pub mod index_api;
+// pub mod internal_api;
 pub mod launcher_api;
-pub mod live_experience_api;
-pub mod neoforge_api;
-pub mod og_api;
-pub mod optifine_api;
-pub mod pics_api;
-pub mod quilt_api;
-pub mod site_api;
-pub mod store_api;
-pub mod streamelements_api;
-pub mod styngr_api;
-pub mod twitter_api;
-pub mod webstore_api;
-pub mod wrapped_api;
+// pub mod live_experience_api;
+// pub mod neoforge_api;
+// pub mod og_api;
+// pub mod optifine_api;
+// pub mod pics_api;
+// pub mod quilt_api;
+// pub mod site_api;
+// pub mod store_api;
+// pub mod streamelements_api;
+// pub mod styngr_api;
+// pub mod twitter_api;
+// pub mod webstore_api;
+// pub mod wrapped_api;
 
 #[derive(Clone)]
 pub struct RemoteApiClient {
